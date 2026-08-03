@@ -1,0 +1,6 @@
+# Only for the LINE Bot webhook server (management/) — not needed by the
+# Streamlit app, kept separate so the Streamlit Cloud deploy stays lean.
+fastapi
+uvicorn[standard]
+line-bot-sdk
+python-dotenv
