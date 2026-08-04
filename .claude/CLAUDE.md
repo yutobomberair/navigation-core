@@ -42,19 +42,41 @@ to `pages/1_Title.py`. Pages navigate to each other explicitly with `st.switch_p
      `route_agent.rough_estimate`, a `chat_text` call with no current-state info yet) shows a quick "searching
      route..." style estimate — mimics a car nav instantly showing a rough distance before you've said where
      you're starting from.
+   - **line_connect**: introduces the official LINE account right after the goal is named (rather than as a final
+     chore at the end) — user feedback was that the original end-of-flow placement felt unnatural. Shows a
+     friend-add link button and the user's `code` to send as the first LINE message, but is fully skippable
+     ("今はスキップして進めても大丈夫です"); re-checks `users_repo.get_user_by_code` fresh (not the cached
+     session user) since linking can happen out-of-band on the LINE side at any time.
    - **current_position**: one `st.text_input` for self-reported current ability. On submit,
      `goal_service.save_goal_and_current_state` persists Goal + CurrentState (title/current_ability only — no
      deadline/background/reason/ideal-state; those fields stay `None`, which is fine since they're nullable), then
-     `goal_service.create_assessment` calls `agent/assessment_agent.py::generate_test` for a 6-8 question
-     multiple-choice diagnostic (domain-appropriate, e.g. vocabulary/listening for a TOEIC goal).
-   - **checkpoint**: the diagnostic test rendered as an `st.form`, framed as a "pre-drive check" (🚗 rental-car-style
-     copy) rather than a bare quiz — user-requested framing to make a mandatory step feel less like an interruption.
+     `goal_service.create_assessment` calls `agent/assessment_agent.py::generate_round1` to generate the **first**
+     round of a diagnostic (round 2 depends on round 1's answers, so it can't be generated yet).
+   - **checkpoint_round1** / **checkpoint_round2**: an adaptive (SPI-style), 2-round diagnostic instead of a single
+     6-8 question quiz — user feedback was that a flat one-shot quiz doesn't dynamically reflect whether the
+     previous answer was right or wrong. Both rounds are rendered as `st.form`s, framed as a "pre-drive check"
+     (🚗 rental-car-style copy) rather than a bare quiz. Round 1 asks one question per parameter at medium
+     difficulty; on submit, `goal_service.generate_round2_assessment` calls `assessment_agent.generate_round2`,
+     which asks one more question per parameter — one level harder if round 1 was answered correctly/maturely, one
+     level easier if not — and appends it onto the same `Assessment` row (`assessments_repo.update_questions`).
+     The prompts (`agent/prompts/assessment.py`) are a single **generalized "karte" (カルテ) prompt** — not
+     branched by goal category (academic vs. practical/entrepreneurial/fitness etc.) — where the AI itself picks
+     3-4 parameters per goal and, per parameter, decides whether to ask a knowledge-check question (objective
+     correct answer) or a self-assessment/maturity-scale question (choices ordered low→high maturity,
+     `correct_index` = most mature/ideal choice). This is intentional: tuning this one prompt across goal types is
+     the core service-value bet, rather than hand-built branching logic per category.
      Scoring (`assessment_agent.score`) is local/deterministic — % correct per question `parameter` — not an AI
-     call, so results are stable and don't cost a request. `goal_service.score_and_finalize_route` writes the score
-     into `CurrentState.parameters` (free-form `dict[str, float]`, since parameter names vary by goal domain) and
+     call, so results are stable and don't cost a request, and works identically whether given round-1-only or the
+     combined round-1+round-2 question set. `goal_service.score_and_finalize_route` writes the score into
+     `CurrentState.parameters` (free-form `dict[str, float]`, since parameter names vary by goal domain) and
      generates the route in one pass (no provisional route to replace, since the test always runs first now) via
-     `route_agent.generate_route`, which also returns a one-line `estimated_arrival` string.
-   - **confirm**: shows the estimated arrival and route preview, ends with a "ナビゲーション開始" button.
+     `route_agent.generate_route`, which also returns a one-line `estimated_arrival` string persisted onto
+     `Goal.estimated_arrival` and shown on both the confirm step and `4_Navigation.py` (in place of the unused
+     `deadline` field, which is never actually asked during onboarding).
+   - **confirm**: shows the estimated arrival and route preview, a reassurance caption that the route is
+     provisional and adjustable, a LINE connect prompt (same skippable pattern as `line_connect`), and ends with a
+     "🚗 ナビゲーション開始" button — which also fires a LINE push notification via `line_notify.push_text` if the
+     user has linked their LINE account.
    There is no `conversation_history` logging for onboarding anymore (nothing conversational to log) and no
    resume-a-partial-attempt support — leaving mid-wizard restarts from `destination` on the next visit.
 3. `pages/3_DailyCheckIn.py` — the LINE-simulation page. A radio toggle switches between 🌅 morning (today's
@@ -62,7 +84,10 @@ to `pages/1_Title.py`. Pages navigate to each other explicitly with `st.switch_p
    reflection, one per day), and 💬 consultation (open-ended chat, `channel="checkin"`).
 4. `pages/4_Navigation.py` — dashboard: Today's Route, a Mentor Message (latest AI message from the checkin
    channel), a Map (milestone list with a computed "current position" = first non-done milestone — there is no
-   stored `in_progress` state, it's derived), and an expandable history of past daily tasks/reflections.
+   stored `in_progress` state, it's derived), and an expandable history of past daily tasks/reflections. Shows
+   `goal.estimated_arrival` (falls back to `goal.deadline` if somehow unset) and, if the user hasn't linked LINE
+   yet, a friend-add link button — the same skippable prompt shown during Onboarding, since linking can happen at
+   any time.
 
 **Auth:** No password. Each tester is identified by a `?u=<code>` query-string code on their personal link
 (`app_platform/services/auth_service.py::require_user`); the code is the entire identity boundary. This is
@@ -104,6 +129,10 @@ process that doesn't run inside the Streamlit runtime.
 need something to trigger them proactively (a cron hitting a new endpoint, most likely) rather than only reacting
 to inbound messages, and the Streamlit dashboard's `persons` table/repository exist in the schema but nothing
 collects Person fields (age/personality/etc.) yet — out of scope for now.
+
+**UI config:** `.streamlit/config.toml` sets `[client] toolbarMode = "minimal"` to hide Streamlit's built-in
+Fork/GitHub/Deploy toolbar badge — user-requested since testers shouldn't see a "fork this app" affordance during
+interviews.
 
 ## Secrets
 

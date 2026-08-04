@@ -6,28 +6,33 @@ of bugs — without spending real OpenAI credits. Never enabled for real
 deployments; only set by test drivers.
 """
 
-MOCK_ASSESSMENT = {
+MOCK_ASSESSMENT_ROUND1 = {
     "questions": [
         {
-            "question": "（モック問1）Vocabulary",
+            "question": "（モック問1・ラウンド1）Vocabulary",
             "choices": ["A", "B", "C", "D"],
             "correct_index": 0,
             "parameter": "Vocabulary",
         },
         {
-            "question": "（モック問2）Vocabulary",
+            "question": "（モック問2・ラウンド1）Listening",
+            "choices": ["A", "B", "C", "D"],
+            "correct_index": 2,
+            "parameter": "Listening",
+        },
+    ]
+}
+
+MOCK_ASSESSMENT_ROUND2 = {
+    "questions": [
+        {
+            "question": "（モック問3・ラウンド2）Vocabulary",
             "choices": ["A", "B", "C", "D"],
             "correct_index": 1,
             "parameter": "Vocabulary",
         },
         {
-            "question": "（モック問3）Listening",
-            "choices": ["A", "B", "C", "D"],
-            "correct_index": 2,
-            "parameter": "Listening",
-        },
-        {
-            "question": "（モック問4）Listening",
+            "question": "（モック問4・ラウンド2）Listening",
             "choices": ["A", "B", "C", "D"],
             "correct_index": 3,
             "parameter": "Listening",
@@ -63,7 +68,8 @@ MOCK_MORNING = {
 MOCK_TEXT_REPLY = "（モック応答）お疲れ様でした。無理せず進めましょう。"
 
 _JSON_RESPONSES = {
-    "assessment": MOCK_ASSESSMENT,
+    "assessment_round1": MOCK_ASSESSMENT_ROUND1,
+    "assessment_round2": MOCK_ASSESSMENT_ROUND2,
     "route": MOCK_ROUTE,
     "morning": MOCK_MORNING,
 }

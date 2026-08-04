@@ -36,6 +36,10 @@ class Goal(BaseModel):
     background: str | None = None
     reason: str | None = None
     ideal_state: str | None = None
+    # AI-computed one-liner from route generation (e.g. "約6ヶ月後（2027年2月頃）") —
+    # deadline itself is never asked in the minimal wizard, so this is what
+    # Navigation actually displays as the target timing.
+    estimated_arrival: str | None = None
     status: Literal["active", "finished"] = "active"
     created_at: datetime | None = None
 

@@ -1,5 +1,5 @@
 from app_platform.db.client import get_client
-from app_platform.domain.models import Assessment
+from app_platform.domain.models import Assessment, AssessmentQuestion
 
 
 def save_assessment(assessment: Assessment) -> Assessment:
@@ -7,6 +7,19 @@ def save_assessment(assessment: Assessment) -> Assessment:
     payload = assessment.model_dump(mode="json", exclude={"id", "created_at"})
     created = client.table("assessments").insert(payload).execute()
     return Assessment(**created.data[0])
+
+
+def update_questions(assessment_id, questions: list[AssessmentQuestion]) -> Assessment:
+    """Appends round-2 questions onto the round-1 set already saved."""
+    client = get_client()
+    payload = [q.model_dump(mode="json") for q in questions]
+    updated = (
+        client.table("assessments")
+        .update({"questions": payload})
+        .eq("id", str(assessment_id))
+        .execute()
+    )
+    return Assessment(**updated.data[0])
 
 
 def save_answers(assessment_id, answers: list[int]) -> Assessment:

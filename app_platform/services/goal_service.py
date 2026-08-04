@@ -32,10 +32,24 @@ def save_goal_and_current_state(
 
 
 def create_assessment(goal: Goal, current_state: CurrentState) -> Assessment:
-    questions = assessment_agent.generate_test(goal, current_state)
+    """Round 1 only — round 2 depends on round 1's answers, so it can't be
+    generated yet."""
+    questions = assessment_agent.generate_round1(goal, current_state)
     return assessments_repo.save_assessment(
         Assessment(user_id=goal.user_id, goal_id=goal.id, questions=questions)
     )
+
+
+def generate_round2_assessment(
+    goal: Goal, assessment: Assessment, round1_answers: list[int]
+) -> Assessment:
+    """Appends round-2 questions (difficulty adjusted per parameter based on
+    round-1 correctness) onto the assessment's question list."""
+    round2_questions = assessment_agent.generate_round2(
+        goal, assessment.questions, round1_answers
+    )
+    combined = assessment.questions + round2_questions
+    return assessments_repo.update_questions(assessment.id, combined)
 
 
 def score_and_finalize_route(
@@ -52,6 +66,7 @@ def score_and_finalize_route(
 
     milestones, estimated_arrival = generate_route(goal, updated_current_state)
     saved_milestones = goals_repo.save_milestones(goal.id, milestones)
+    goals_repo.update_estimated_arrival(goal.id, estimated_arrival)
 
     return updated_current_state, saved_milestones, estimated_arrival
 

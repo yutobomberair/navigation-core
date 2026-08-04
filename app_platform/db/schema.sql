@@ -30,6 +30,7 @@ create table if not exists goals (
     background text,
     reason text,
     ideal_state text,
+    estimated_arrival text,
     status text not null default 'active',
     created_at timestamptz not null default now()
 );

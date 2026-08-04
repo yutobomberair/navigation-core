@@ -17,7 +17,10 @@ milestones = goal_service.get_milestones(goal.id)
 current = next((m for m in milestones if m.status != "done"), None)
 
 st.subheader(f"🎯 {goal.title}")
-st.caption(f"期限: {goal.deadline}" if goal.deadline else "期限未設定")
+if goal.estimated_arrival:
+    st.caption(f"到着予定: {goal.estimated_arrival}")
+elif goal.deadline:
+    st.caption(f"期限: {goal.deadline}")
 
 if not user.line_user_id:
     st.link_button("📱 公式LINEを友だち追加して通知を受け取る", LINE_ADD_FRIEND_URL)

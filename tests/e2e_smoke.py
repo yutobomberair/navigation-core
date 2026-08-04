@@ -78,7 +78,13 @@ def run_steps(page, base, code):
     page.get_by_role("button", name="ルートを検索する").click()
     page.wait_for_timeout(2000)
 
-    # step 2: current position
+    # step 2: early LINE-connect intro (skippable)
+    check("LINE-connect step loads without error", not has_error(page), page)
+    check("LINE-connect intro shown", "いいですね" in page.inner_text("body"), page)
+    page.get_by_role("button", name="続ける").click()
+    page.wait_for_timeout(1000)
+
+    # step 3: current position
     check("Current position step loads without error", not has_error(page), page)
     check("Rough estimate shown", "モック応答" in page.inner_text("body"), page)
     current_input = page.get_by_placeholder("例: TOEIC500点くらい")
@@ -87,13 +93,23 @@ def run_steps(page, base, code):
     page.get_by_role("button", name="距離を算出する").click()
     page.wait_for_timeout(3000)
 
-    # step 3: checkpoint (diagnostic test, mocked 4 MC questions)
-    check("Checkpoint page loads without error", not has_error(page), page)
+    # step 4a: checkpoint round 1 (diagnostic test, mocked 2 MC questions)
+    check("Checkpoint round 1 loads without error", not has_error(page), page)
     check("Checkpoint intro text shown", "ナビ開始前のご確認" in page.inner_text("body"), page)
     radio_groups = page.locator('[data-testid="stRadioGroup"]')
-    check("Mock assessment questions rendered", radio_groups.count() == 4, page)
+    check("Mock round1 questions rendered", radio_groups.count() == 2, page)
     for i in range(radio_groups.count()):
         radio_groups.nth(i).get_by_text("A", exact=True).click(force=True)
+    page.get_by_role("button", name="次へ").click()
+    page.wait_for_timeout(3000)
+
+    # step 4b: checkpoint round 2 (difficulty-adjusted follow-up questions)
+    check("Checkpoint round 2 loads without error", not has_error(page), page)
+    check("Checkpoint round 2 intro shown", "ご確認（続き）" in page.inner_text("body"), page)
+    radio_groups2 = page.locator('[data-testid="stRadioGroup"]')
+    check("Mock round2 questions rendered", radio_groups2.count() == 2, page)
+    for i in range(radio_groups2.count()):
+        radio_groups2.nth(i).get_by_text("A", exact=True).click(force=True)
     page.get_by_role("button", name="確認を完了する").click()
     page.wait_for_timeout(3000)
 

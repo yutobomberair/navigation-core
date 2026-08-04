@@ -30,6 +30,17 @@ def finish_goal(goal_id) -> None:
     client.table("goals").update({"status": "finished"}).eq("id", str(goal_id)).execute()
 
 
+def update_estimated_arrival(goal_id, estimated_arrival: str) -> Goal:
+    client = get_client()
+    updated = (
+        client.table("goals")
+        .update({"estimated_arrival": estimated_arrival})
+        .eq("id", str(goal_id))
+        .execute()
+    )
+    return Goal(**updated.data[0])
+
+
 def save_current_state(state: CurrentState) -> CurrentState:
     client = get_client()
     payload = state.model_dump(mode="json", exclude={"id", "updated_at"})

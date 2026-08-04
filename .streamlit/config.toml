@@ -4,3 +4,8 @@ backgroundColor = "#F6ECD4"
 secondaryBackgroundColor = "#EBDAB0"
 textColor = "#3B2A18"
 font = "serif"
+
+[client]
+# Hides Streamlit's own toolbar (Fork/GitHub/Deploy icons) — this is an
+# unlisted interview-testing tool, not meant to invite public forking.
+toolbarMode = "minimal"
